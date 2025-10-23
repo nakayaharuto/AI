@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class InfiniteStageGenerator : MonoBehaviour
+public class Infinite : MonoBehaviour
 {
     public GameObject normalPlatformPrefab;
     public GameObject movingPlatformPrefab;
@@ -9,10 +9,10 @@ public class InfiniteStageGenerator : MonoBehaviour
 
     public Transform player;
     public float spawnY = 0f;
-    public float platformSpacingMin = 2.5f; // ← 間隔を小さく
-    public float platformSpacingMax = 4f;   // ← 間隔を小さく
+    public float platformSpacingMin = 4f;
+    public float platformSpacingMax = 6f;
     public float xRange = 5f;
-    public int poolSize = 40;               // ← 床の数も少し増加
+    public int poolSize = 30;
     public float playerSafeZone = 6f;
 
     private List<GameObject> platforms = new List<GameObject>();
@@ -31,7 +31,7 @@ public class InfiniteStageGenerator : MonoBehaviour
             platforms.Add(platform);
         }
 
-        // 初期生成
+        // 初期生成（プレイヤー近くにもOK）
         for (int i = 0; i < 10; i++)
         {
             bool ignoreSafeZone = i < 3;
@@ -53,12 +53,7 @@ public class InfiniteStageGenerator : MonoBehaviour
         GameObject platform = GetInactivePlatform();
         if (platform == null) return;
 
-        // 難易度に応じて間隔を可変にする
-        float difficulty = Mathf.Clamp(player.position.y / 300f, 0f, 1.2f);
-        float spacingMin = Mathf.Lerp(platformSpacingMin, 4.5f, difficulty);
-        float spacingMax = Mathf.Lerp(platformSpacingMax, 6.0f, difficulty);
-
-        float y = highestY + Random.Range(spacingMin, spacingMax);
+        float y = highestY + Random.Range(platformSpacingMin, platformSpacingMax);
         float x = Random.Range(-xRange, xRange);
 
         if (!ignoreSafeZone && Mathf.Abs(y - player.position.y) < playerSafeZone)
@@ -81,13 +76,16 @@ public class InfiniteStageGenerator : MonoBehaviour
 
     GameObject GetRandomPlatformPrefab()
     {
+        // プレイヤーの高さから難易度係数を計算（0〜1.5くらいまで上昇）
         float difficulty = Mathf.Clamp(player.position.y / 200f, 0f, 1.5f);
 
-        float normalRate = Mathf.Clamp01(0.6f - 0.4f * difficulty);
-        float movingRate = Mathf.Clamp01(0.25f + 0.15f * difficulty);
-        float fallingRate = Mathf.Clamp01(0.15f + 0.25f * difficulty);
+        // 基本確率
+        float normalRate = Mathf.Clamp01(0.6f - 0.4f * difficulty);  // 上昇で減少
+        float movingRate = Mathf.Clamp01(0.25f + 0.15f * difficulty); // 上昇で増加
+        float fallingRate = Mathf.Clamp01(0.15f + 0.25f * difficulty); // 上昇で増加
 
         float rand = Random.value;
+
         if (rand < normalRate)
             return normalPlatformPrefab;
         else if (rand < normalRate + movingRate)
