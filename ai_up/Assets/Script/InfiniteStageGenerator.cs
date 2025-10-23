@@ -1,75 +1,95 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using System.Collections.Generic;
 
 public class InfiniteStageGenerator : MonoBehaviour
 {
-    [Header("‘«êPrefab")]
-    public GameObject[] platformPrefabs; // 0:’Êí, 1:—‰º, 2:“®‚­
-
-    [Header("¶¬İ’è")]
-    public float minYGap = 1.5f;
-    public float maxYGap = 2.5f;
-    public float minX = -5f;
-    public float maxX = 5f;
-    public int initialPlatforms = 20; // Å‰‚É¶¬‚·‚é”
-
-    [Header("“ïˆÕ“xİ’è")]
-    [Range(0f, 1f)] public float fallRatio = 0.2f;
-    [Range(0f, 1f)] public float moveRatio = 0.2f;
+    public GameObject normalPlatformPrefab;
+    public GameObject movingPlatformPrefab;
+    public GameObject fallingPlatformPrefab;
 
     public Transform player;
+    public float spawnY = 0f;
+    public float platformSpacingMin = 4f;
+    public float platformSpacingMax = 6f;
+    public float xRange = 5f;
+    public int poolSize = 30;
+    public float playerSafeZone = 6f;
 
-    private float highestY = 0f;
     private List<GameObject> platforms = new List<GameObject>();
+    private float highestY;
 
     void Start()
     {
-        float lastY = 0f;
+        highestY = spawnY;
 
-        for (int i = 0; i < initialPlatforms; i++)
+        // ãƒ—ãƒ¼ãƒ«ä½œæˆ
+        for (int i = 0; i < poolSize; i++)
         {
-            lastY = GeneratePlatform(lastY);
+            GameObject prefab = GetRandomPlatformPrefab();
+            GameObject platform = Instantiate(prefab, transform);
+            platform.SetActive(false);
+            platforms.Add(platform);
+        }
+
+        // âœ… æœ€åˆã®æ•°å€‹ã¯å®‰å…¨è·é›¢ãƒã‚§ãƒƒã‚¯ãªã—ã§ç”Ÿæˆï¼ˆé–‹å§‹åœ°ç‚¹ã‚’ç¢ºä¿ï¼‰
+        for (int i = 0; i < 10; i++)
+        {
+            bool ignoreSafeZone = i < 3; // æœ€åˆã®3ã¤ã¯è¿‘ãã§ã‚‚OK
+            SpawnPlatform(ignoreSafeZone);
         }
     }
 
     void Update()
     {
-        // ƒvƒŒƒCƒ„[ã¸‚É‰‚¶‚Ä‘«ê‚ğ¶¬
-        while (highestY < player.position.y + 10f) // ‰æ–Êã‚É‘«ê‚ªí‚É‚ ‚é‚æ‚¤‚É
+        if (player.position.y + 15f > highestY)
         {
-            highestY = GeneratePlatform(highestY);
-        }
-
-        // ‰æ–Ê‰º‚Ì‘«ê‚ğ”jŠü
-        for (int i = platforms.Count - 1; i >= 0; i--)
-        {
-            if (platforms[i].transform.position.y < player.position.y - 10f)
-            {
-                Destroy(platforms[i]);
-                platforms.RemoveAt(i);
-            }
+            for (int i = 0; i < 5; i++)
+                SpawnPlatform();
         }
     }
 
-    float GeneratePlatform(float lastY)
+    void SpawnPlatform(bool ignoreSafeZone = false)
     {
-        float yGap = Random.Range(minYGap, maxYGap);
-        float yPos = lastY + yGap;
-        float xPos = Random.Range(minX, maxX);
+        GameObject platform = GetInactivePlatform();
+        if (platform == null) return;
 
-        // ‘«êƒ^ƒCƒvŒˆ’è
+        float y = highestY + Random.Range(platformSpacingMin, platformSpacingMax);
+        float x = Random.Range(-xRange, xRange);
+
+        // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ä»˜è¿‘ã®åºŠã‚’é¿ã‘ã‚‹ï¼ˆåˆæœŸç”Ÿæˆä»¥å¤–ã®ã¿ï¼‰
+        if (!ignoreSafeZone && Mathf.Abs(y - player.position.y) < playerSafeZone)
+        {
+            y += playerSafeZone;
+        }
+
+        platform.transform.position = new Vector3(x, y, 0);
+        platform.SetActive(true);
+        highestY = y;
+    }
+
+    GameObject GetInactivePlatform()
+    {
+        foreach (var p in platforms)
+        {
+            if (!p.activeInHierarchy)
+                return p;
+        }
+        return null;
+    }
+
+    GameObject GetRandomPlatformPrefab()
+    {
         float rand = Random.value;
-        GameObject prefab;
-        if (rand < fallRatio)
-            prefab = platformPrefabs[1];
-        else if (rand < fallRatio + moveRatio)
-            prefab = platformPrefabs[2];
+        if (rand < 0.6f)
+            return normalPlatformPrefab;
+        else if (rand < 0.8f)
+            return movingPlatformPrefab;
         else
-            prefab = platformPrefabs[0];
+            return fallingPlatformPrefab;
+    }
 
-        GameObject platform = Instantiate(prefab, new Vector3(xPos, yPos, 0f), Quaternion.identity);
-        platforms.Add(platform);
-
-        return yPos;
+    public float GetMaxHeight()
+    {
+        return highestY;
     }
 }
