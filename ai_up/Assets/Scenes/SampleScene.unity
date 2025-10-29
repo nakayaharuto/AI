@@ -2186,6 +2186,10 @@ PrefabInstance:
       value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 7732846677713481208, guid: 5dd70ef1233e0a442be7d9bca9db9759, type: 3}
+      propertyPath: trapPlatformPrefab
+      value: 
+      objectReference: {fileID: 947270629332446953, guid: ad35c04464f185642bf6b3884123c05b, type: 3}
+    - target: {fileID: 7732846677713481208, guid: 5dd70ef1233e0a442be7d9bca9db9759, type: 3}
       propertyPath: movingPlatformPrefab
       value: 
       objectReference: {fileID: 659769882577590927, guid: 2c312849b5663fe41bc3dfb23fc6c531, type: 3}
@@ -2197,6 +2201,10 @@ PrefabInstance:
       propertyPath: fallingPlatformPrefab
       value: 
       objectReference: {fileID: 4732578788510295246, guid: 600ee6fe153e8d544b1c1ea4680282af, type: 3}
+    - target: {fileID: 7732846677713481208, guid: 5dd70ef1233e0a442be7d9bca9db9759, type: 3}
+      propertyPath: verticalMovingPlatformPrefab
+      value: 
+      objectReference: {fileID: 2830211487849301758, guid: e604128ca2218cb42ab5392eaec5094d, type: 3}
     - target: {fileID: 8131314211501977807, guid: 5dd70ef1233e0a442be7d9bca9db9759, type: 3}
       propertyPath: m_Name
       value: InfiniteStageGenerator

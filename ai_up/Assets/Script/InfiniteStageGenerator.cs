@@ -1,12 +1,17 @@
-﻿using UnityEngine;
+﻿using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class InfiniteStageGenerator : MonoBehaviour
 {
+    [Header("Platform Prefabs")]
     public GameObject normalPlatformPrefab;
     public GameObject movingPlatformPrefab;
+    public GameObject verticalMovingPlatformPrefab; // 上下移動床
     public GameObject fallingPlatformPrefab;
+    public GameObject trapPlatformPrefab;       // トラップ（落とすギミック）
 
+    [Header("Settings")]
     public Transform player;
     public float spawnY = 0f;
     public float platformSpacingMin = 2.5f; // ← 間隔を小さく
@@ -14,9 +19,12 @@ public class InfiniteStageGenerator : MonoBehaviour
     public float xRange = 5f;
     public int poolSize = 40;               // ← 床の数も少し増加
     public float playerSafeZone = 6f;
+    public float initialHeight = 500f;      // 初期生成高さ
+    public float extendHeight = 1000f;       // 拡張生成高さ
 
     private List<GameObject> platforms = new List<GameObject>();
     private float highestY;
+    private bool generatedInitial = false;
 
     void Start()
     {
@@ -25,22 +33,32 @@ public class InfiniteStageGenerator : MonoBehaviour
         // プール作成
         for (int i = 0; i < poolSize; i++)
         {
-            GameObject prefab = GetRandomPlatformPrefab();
+            GameObject prefab = GetRandomPlatformPrefab(0);
             GameObject platform = Instantiate(prefab, transform);
             platform.SetActive(false);
             platforms.Add(platform);
         }
 
-        // 初期生成
+        // ⭐ プレイヤー足元〜少し上まで即生成
         for (int i = 0; i < 10; i++)
-        {
-            bool ignoreSafeZone = i < 3;
-            SpawnPlatform(ignoreSafeZone);
-        }
+            SpawnPlatform(ignoreSafeZone: true);
+
+        // ⭐ 続きをコルーチンでゆっくり生成
+        StartCoroutine(GenerateInitialStageCoroutine(initialHeight));
     }
 
     void Update()
     {
+        if (player == null) return;
+
+        // 高さ1000まで生成
+        if (!generatedInitial && highestY >= initialHeight)
+        {
+            GenerateInitialStageCoroutine(extendHeight - initialHeight);
+            generatedInitial = true;
+        }
+
+        // 通常更新（プレイヤーが上昇し続ける場合）
         if (player.position.y + 15f > highestY)
         {
             for (int i = 0; i < 5; i++)
@@ -48,13 +66,29 @@ public class InfiniteStageGenerator : MonoBehaviour
         }
     }
 
+    IEnumerator GenerateInitialStageCoroutine(float targetHeight)
+    {
+        int count = 0;
+
+        while (highestY < targetHeight)
+        {
+            SpawnPlatform(ignoreSafeZone: true);
+            count++;
+
+            // 毎 10 枚ごとに 1 フレーム待機
+            if (count % 10 == 0)
+                yield return null;
+        }
+
+        generatedInitial = true;
+    }
+
     void SpawnPlatform(bool ignoreSafeZone = false)
     {
         GameObject platform = GetInactivePlatform();
         if (platform == null) return;
 
-        // 難易度に応じて間隔を可変にする
-        float difficulty = Mathf.Clamp(player.position.y / 300f, 0f, 1.2f);
+        float difficulty = Mathf.Clamp(highestY / 2000f, 0f, 1.5f);
         float spacingMin = Mathf.Lerp(platformSpacingMin, 4.5f, difficulty);
         float spacingMax = Mathf.Lerp(platformSpacingMax, 6.0f, difficulty);
 
@@ -64,8 +98,21 @@ public class InfiniteStageGenerator : MonoBehaviour
         if (!ignoreSafeZone && Mathf.Abs(y - player.position.y) < playerSafeZone)
             y += playerSafeZone;
 
+        // ランダムな床タイプ取得
+        GameObject prefab = GetRandomPlatformPrefab(difficulty);
+
+        // 新しい床をプール再利用で更新
         platform.transform.position = new Vector3(x, y, 0);
         platform.SetActive(true);
+
+        // プレハブが違う場合は置き換え
+        //if (platform.name.Contains(prefab.name) == false)
+        //{
+        //    Destroy(platform);
+        //    platform = Instantiate(prefab, new Vector3(x, y, 0), Quaternion.identity, transform);
+        //    platforms.Add(platform);
+        //}
+
         highestY = y;
     }
 
@@ -79,21 +126,34 @@ public class InfiniteStageGenerator : MonoBehaviour
         return null;
     }
 
-    GameObject GetRandomPlatformPrefab()
+    GameObject GetRandomPlatformPrefab(float difficulty)
     {
-        float difficulty = Mathf.Clamp(player.position.y / 200f, 0f, 1.5f);
+        // 難易度で確率を制御
+        float normalRate = Mathf.Clamp01(0.5f - 0.3f * difficulty);
+        float movingRate = Mathf.Clamp01(0.2f + 0.1f * difficulty);
+        float verticalRate = Mathf.Clamp01(0.1f + 0.15f * difficulty);
+        float fallingRate = Mathf.Clamp01(0.1f + 0.2f * difficulty);
+        float trapRate = Mathf.Clamp01(0.1f + 0.25f * difficulty);
 
-        float normalRate = Mathf.Clamp01(0.6f - 0.4f * difficulty);
-        float movingRate = Mathf.Clamp01(0.25f + 0.15f * difficulty);
-        float fallingRate = Mathf.Clamp01(0.15f + 0.25f * difficulty);
+        float total = normalRate + movingRate + verticalRate + fallingRate + trapRate;
+        float rand = Random.value * total;
 
-        float rand = Random.value;
         if (rand < normalRate)
             return normalPlatformPrefab;
-        else if (rand < normalRate + movingRate)
+        rand -= normalRate;
+
+        if (rand < movingRate)
             return movingPlatformPrefab;
-        else
+        rand -= movingRate;
+
+        if (rand < verticalRate)
+            return verticalMovingPlatformPrefab;
+        rand -= verticalRate;
+
+        if (rand < fallingRate)
             return fallingPlatformPrefab;
+
+        return trapPlatformPrefab;
     }
 
     public float GetMaxHeight()
