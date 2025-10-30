@@ -9,6 +9,9 @@ public class GameManager : MonoBehaviour
     public bool IsPlaying { get; private set; }
     public float BestTime { get; private set; }
 
+    // ★ 選択中のキャラプレハブを保持する変数
+    public GameObject SelectedCharacterPrefab;
+
     private void Awake()
     {
         if (Instance == null)

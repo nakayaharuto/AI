@@ -121,3 +121,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a45f0b07dcb914449aa4f810d6029b74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  goalImage: {fileID: 7821736437782623472, guid: eb99d9d6d8fa1da46bf26e965a93c6ba, type: 3}

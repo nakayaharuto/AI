@@ -8,7 +8,15 @@ public class CameraFollowVertical : MonoBehaviour
 
     void LateUpdate()
     {
-        if (!player) return;
+        // プレイヤーが見つからない場合、自動で探す
+        if (player == null)
+        {
+            GameObject p = GameObject.FindGameObjectWithTag("Player");
+            if (p != null)
+                player = p.transform;
+            else
+                return; // まだ見つからないなら処理中断
+        }
 
         Vector3 targetPos = new Vector3(player.position.x, player.position.y + offset.y, offset.z);
         transform.position = Vector3.Lerp(transform.position, targetPos, smoothSpeed);

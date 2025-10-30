@@ -121,3 +121,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aff87b04ea09cf74080a164f3bfe9b66, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  moveOffset: {x: 3, y: 0, z: 0}
+  moveSpeed: 4
+  fallDelay: 0.5
+  returnDelay: 3
+  returnSpeed: 1
+  fallDuration: 2
