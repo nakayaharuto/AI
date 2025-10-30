@@ -10,6 +10,7 @@ public class InfiniteStageGenerator : MonoBehaviour
     public GameObject verticalMovingPlatformPrefab; // 上下移動床
     public GameObject fallingPlatformPrefab;
     public GameObject trapPlatformPrefab;       // トラップ（落とすギミック）
+    public GameObject goalPrefab;       //ゴール
 
     [Header("Settings")]
     public Transform player;
@@ -19,8 +20,8 @@ public class InfiniteStageGenerator : MonoBehaviour
     public float xRange = 5f;
     public int poolSize = 40;               // ← 床の数も少し増加
     public float playerSafeZone = 6f;
-    public float initialHeight = 500f;      // 初期生成高さ
-    public float extendHeight = 1000f;       // 拡張生成高さ
+    public float initialHeight = 300f;      // 初期生成高さ
+    //public float extendHeight = 1000f;       // 拡張生成高さ
 
     private List<GameObject> platforms = new List<GameObject>();
     private float highestY;
@@ -43,20 +44,17 @@ public class InfiniteStageGenerator : MonoBehaviour
         for (int i = 0; i < 10; i++)
             SpawnPlatform(ignoreSafeZone: true);
 
-        // ⭐ 続きをコルーチンでゆっくり生成
+        // ⭐ 最初から500まで生成して終了
         StartCoroutine(GenerateInitialStageCoroutine(initialHeight));
+
     }
 
     void Update()
     {
         if (player == null) return;
 
-        // 高さ1000まで生成
-        if (!generatedInitial && highestY >= initialHeight)
-        {
-            GenerateInitialStageCoroutine(extendHeight - initialHeight);
-            generatedInitial = true;
-        }
+        // もう300まで生成したら追加しない
+        if (generatedInitial) return;
 
         // 通常更新（プレイヤーが上昇し続ける場合）
         if (player.position.y + 15f > highestY)
@@ -81,6 +79,9 @@ public class InfiniteStageGenerator : MonoBehaviour
         }
 
         generatedInitial = true;
+
+        //ゴール生成
+        SpawnGoal();
     }
 
     void SpawnPlatform(bool ignoreSafeZone = false)
@@ -104,14 +105,6 @@ public class InfiniteStageGenerator : MonoBehaviour
         // 新しい床をプール再利用で更新
         platform.transform.position = new Vector3(x, y, 0);
         platform.SetActive(true);
-
-        // プレハブが違う場合は置き換え
-        //if (platform.name.Contains(prefab.name) == false)
-        //{
-        //    Destroy(platform);
-        //    platform = Instantiate(prefab, new Vector3(x, y, 0), Quaternion.identity, transform);
-        //    platforms.Add(platform);
-        //}
 
         highestY = y;
     }
@@ -160,4 +153,11 @@ public class InfiniteStageGenerator : MonoBehaviour
     {
         return highestY;
     }
+    void SpawnGoal()
+    {
+        Vector3 goalPos = new Vector3(0f, highestY + 3f, 0f); // 床より少し上
+        GameObject goal = Instantiate(goalPrefab, goalPos, Quaternion.identity);
+        Debug.Log("ゴール出現！");
+    }
 }
+
